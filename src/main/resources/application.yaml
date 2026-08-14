@@ -5,6 +5,22 @@ spring:
     name: actuator-demo2
   lifecycle:
     timeout-per-shutdown-phase: 30s
+  datasource:
+    url: "jdbc:h2:mem:actuatordemo;DB_CLOSE_DELAY=-1"
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: "" ## only for demo, do not use in production
+    hikari:
+      pool-name: demo-pool
+      ## deliberately tiny so the pool is easy to saturate from a terminal
+      maximum-pool-size: 5
+      minimum-idle: 2
+      ## HikariConfig takes plain millis here, not Boot's Duration strings.
+      ## 20s is long enough that hikaricp.connections.pending stays observable
+      ## while you click around /actuator/metrics in a browser.
+      connection-timeout: 20000
+      idle-timeout: 30000
+      max-lifetime: 600000
   # security:
   #   user:
   #     name: admin
@@ -57,11 +73,14 @@ management:
         liveness:
           include: livenessState, diskSpace
         readiness:
-          include: readinessState, redis
+          include: readinessState, redis, db
     info:
       cache:
         time-to-live: 1h
     env:
+      show-values: always
+    configprops:
+      ## unlike env, this one masks every value by default
       show-values: always
   server:
     port: 8081
